@@ -1,0 +1,232 @@
+(function(){
+
+    $(document).ready(function()
+    {
+        skrollr.init({
+            mobileCheck: function() {
+                return false;
+            }
+        });
+        $(document).foundation();
+
+        $('.single-item').slick();
+
+        $('.disabled').click(function(e){
+            return false;
+        });
+
+
+        $('.icon-block').hover(
+            function() {
+                if( $(this).children('.logotype-caption').is(':visible') != false) {
+                    $(this).children('.logotype-caption').animate({opacity: 0}, 200);
+                    $(this).children('.logotype-overlay').animate({opacity: 1}, 200);
+                }
+
+            }, function() {
+                $(this).children('.logotype-caption').animate({opacity: 1}, 200);
+                $(this).children('.logotype-overlay').animate({opacity: 0}, 200);
+            }
+        );
+
+        $('.download-checkbox').on('change', function(){
+            if( this.checked ) {
+                $(this).parent().siblings('a').css( 'background-color', '#00bfa5').unbind('click');
+            }
+            else {
+                $(this).parent().siblings('a').css( 'background-color', '#e8e8e8').click(function(){ return false; });
+            }
+        });
+
+        $('.screenshots-platforms.more').hide();
+        $('#more-platforms-button').click(function(){
+            $('.screenshots-platforms.more').show();
+            $(this).hide();
+        });
+        $('.tabs.main').click(function(){
+            $('.tabs.sub').children().removeClass('active');
+        });
+        $('.tabs.sub').click(function(){
+            $('.tabs.main').children().removeClass('active');
+        });
+
+
+        $(document).on("mouseover", ".screenshot-block", function(e) {
+            $(this).animate({'background-color': '#ffffff'}, 0);
+            $(this).children('.screenshot-overlay').animate({opacity: 1}, 0);
+        });
+        $(document).on("mouseleave", ".screenshot-block", function(e) {
+            $(this).animate({'background-color': 'transparent'}, 0);
+            $(this).children('.screenshot-overlay').animate({opacity: 0}, 0);
+        });
+
+        $(document.body).delegate(".screenshot-download-checkbox", "change", function(){
+            if( this.checked ) {
+                $(this).parent().siblings('a').css( 'background-color', '#00bfa5' ).unbind('click');
+            }
+            else {
+                $(this).parent().siblings('a').css( 'background-color', '#e8e8e8' ).click(function () {return false;});
+            }
+        });
+
+        $('.screenshot-download-button').css( 'background-color', '#e8e8e8' );
+
+        $(function() {
+            $('a[href*=#]:not([href*=#panel])').click(function() {
+                if (location.pathname.replace(/^\//,'') == this.pathname.replace(/^\//,'') && location.hostname == this.hostname) {
+                    var target = $(this.hash);
+                    target = target.length ? target : $('[name=' + this.hash.slice(1) +']');
+
+                    var scrollTime = 750;
+
+                    if (target.length) {
+                        $('html,body').animate({
+                            scrollTop: target.offset().top-130
+                        }, scrollTime);
+
+                        return false;
+                    }
+                }
+            });
+        });
+
+        $("#legal-details").hide();
+
+        $("#guidelines-less").click(function(){
+            $("#legal-details").hide();
+            $('#brand-guidelines').css('overflow', 'visible');
+            $("#guidelines-less").css('display', 'none');
+            $("#guidelines-more").css('display', 'block');
+        });
+
+        $("#guidelines-more").click(function(){
+            $("#legal-details").show();
+            $('#brand-guidelines').css('overflow', 'hidden');
+            $("#guidelines-less").css('display', 'block');
+            $("#guidelines-more").css('display', 'none');
+        });
+    });
+
+    window.logoDownload = function(assetId, button){
+        var checkbox = $(button).siblings('p').children('.download-checkbox');
+        if( checkbox.prop('checked') ) {
+            $.ajax({
+                url: "/api/asset_bundle/?asset_id=" + assetId + "&language=en_US",
+                success: function (response) {
+                    downloadURI(response.result.platforms[0].media[0].ssl_url, 'logos');
+                }
+            });
+        }
+    };
+    window.screenshotDownload = function(assetURL, button){
+        var checkbox = $(button).siblings('p').children('.screenshot-download-checkbox');
+        if( checkbox.prop('checked') ) {
+            downloadURI(assetURL, 'screenshots');
+        }
+    };
+
+    window.allAssetsDownload = function(){
+        var checkbox = $('#download-all-checkbox');
+        if( checkbox.prop('checked') ) {
+            downloadURI('WhatsApp_brand_assets.zip', 'WhatsApp_brand_assets.zip');
+        }
+    }
+
+    window.dismissMenu = function() {
+        if(!$('#menu-items').hidden){
+            $('#menu-items').hide();
+            $('#menu-icon').show();
+            $('#menu-icon-close').hide();
+        }
+        else{
+            $('#menu-icon-close').show();
+            $('#menu-icon').hide();
+        }
+    }
+
+
+    function downloadURI(uri, name) {
+        var link = document.createElement("a");
+        document.body.appendChild(link);
+        link.download = name;
+        link.href = uri;
+        link.click();
+    }
+
+    var assetEndPoint = '/api/asset_bundle/?asset_id=';
+    $.ajax({
+        dataType: "json",
+        url: assetEndPoint + iOSID,
+        complete: function(response) { writeScreenshot(response, 'panel-ios', 2); }
+    });
+    $.ajax({
+        dataType: "json",
+        url: assetEndPoint + androidID,
+        complete: function(response) { writeScreenshot(response, 'panel-android', 2); }
+    });
+    $.ajax({
+        dataType: "json",
+        url: assetEndPoint + windowsID,
+        complete: function(response) { writeScreenshot(response, 'panel-windows-phone', 2); }
+    });
+    $.ajax({
+        dataType: "json",
+        url: assetEndPoint + webID,
+        complete: function(response) { writeScreenshot(response, 'panel-web', 3); }
+    });
+
+
+
+    function writeScreenshot(response, divID, columns){
+        var platformItems = (JSON.parse( response.responseText ).result) ? JSON.parse( response.responseText ).result.platforms : [];
+        var html = '';
+        var htmlMobile = '<div id="'+ divID + '-slider">';
+
+        platformItems.forEach(function(item){
+            if( item.previews.length > 0 ) {
+                var previewURL = item.previews[0].ssl_url;
+                var mediaURL = item.media[0].ssl_url;
+                var title = item.name;
+                var summary = '';
+                var assetID = item.id;
+
+                var htmlOptions = {previewURL: previewURL, columns: columns, mediaURL: mediaURL, title: title, summary: summary, id: assetID};
+                html += compileHTML(htmlOptions);
+                htmlMobile += compileMobileHTML(htmlOptions);
+            }
+        });
+        $('#' + divID).html(html);
+
+        htmlMobile += '</div>';
+        $('#' + divID+'-mobile').html(htmlMobile);
+
+        $('#' + divID + '-slider').slick();
+    }
+    function compileHTML(options){
+        return '<div class="large-' + options.columns + ' columns left"><div class="screenshot-block">\
+                    <div class="screenshot-box">\
+                        <img src=' + options.previewURL + ' alt="" />\
+                    </div>\
+                    <div class="screenshot-copy">\
+                        <h5>' + options.title + '</h5>\
+                        <p>' + options.summary + '</p>\
+                    </div>\
+                    <div class="screenshot-overlay">\
+                        <p><input type="checkbox" class="screenshot-download-checkbox"/> I have read and agree to the <a href="/WhatsApp-Brand-Guidelines.pdf" target="_blank">usage guidelines</a>.</p>\
+                        <a onClick="javascript:screenshotDownload(\'' + options.mediaURL + '\', this);" class="button screenshot-download-button" >Download</a>\
+                    </div></div></div>';
+    }
+
+    function compileMobileHTML(options){
+        return '<div class="screenshot-item-mobile"><div class="screenshot-block-mobile">\
+                    <div class="screenshot-box-mobile">\
+                        <img src=' + options.previewURL + ' alt="" />\
+                    </div>\
+                    <div class="screenshot-copy-mobile">\
+                        <h5>' + options.title + '</h5>\
+                        <p>' + options.summary + '</p>\
+                    </div>\
+                </div></div>';
+    }
+
+})();
